@@ -76,6 +76,15 @@ const maker = {
       name: "avatar",
       type: "image",
     },
+    {
+      title: "Photos",
+      name: "photos",
+      type: "array",
+      of: [{ type: "image" }],
+      options: {
+        layout: "grid",
+      },
+    },
   ],
   initialValue: {
     featured: false,
