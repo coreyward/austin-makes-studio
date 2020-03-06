@@ -43,32 +43,38 @@ const ImportDialog = ({ id, type, onComplete }) => {
   const [status, setStatus] = useState({ percent: 0, message: "Idle" })
   const [handle, setHandle] = useState()
   const [posts, setPosts] = useState()
-  const [importImages, setImportImages] = useState(true)
+  const [importSettings, setImportSettings] = useState({
+    content: true,
+    images: true,
+  })
 
   const importHandle = async () => {
-    setStatus({ percent: 5, message: "Fetching profile" })
-    const user = await instagram.getProfile(handle)
+    if (importSettings.content) {
+      setStatus({ percent: 5, message: "Fetching profile" })
+      const user = await instagram.getProfile(handle)
 
-    setStatus({ percent: 15, message: "Downloading avatar" })
-    const image = await getImageData(user.avatar)
+      setStatus({ percent: 15, message: "Downloading avatar" })
+      const image = await getImageData(user.avatar)
 
-    setStatus({ percent: 30, message: "Uploading avatar" })
-    const avatar = await uploadImage(image)
+      setStatus({ percent: 30, message: "Uploading avatar" })
+      const avatar = await uploadImage(image)
 
-    setStatus({ percent: 40, message: "Updating document" })
-    patch.execute([
-      {
-        set: {
-          name: user.name,
-          bio: user.bio,
-          website: user.website ? user.website.toLowerCase() : undefined,
-          avatar: { asset: { _type: "reference", _ref: avatar._id } },
-          instagramHandle: handle,
+      setStatus({ percent: 40, message: "Updating document" })
+      patch.execute([
+        {
+          set: {
+            name: user.name,
+            bio: user.bio,
+            website: user.website ? user.website.toLowerCase() : undefined,
+            avatar: { asset: { _type: "reference", _ref: avatar._id } },
+            instagramHandle: handle,
+          },
         },
-      },
-    ])
+      ])
+      setStatus({ percent: 55, message: "Document updated" })
+    }
 
-    if (importImages) {
+    if (importSettings.images) {
       setStatus({ percent: 60, message: "Fetching posts" })
       setPosts(await instagram.getPosts(handle))
     } else {
@@ -113,12 +119,37 @@ const ImportDialog = ({ id, type, onComplete }) => {
             </Button>
           </div>
 
-          <ToggleSwitch
-            label="Import Images"
-            checked={importImages}
-            onChange={() => setImportImages(prev => !prev)}
-          />
-          <br />
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "1em",
+            }}
+          >
+            <ToggleSwitch
+              label="Import Content"
+              checked={importSettings.content}
+              onChange={() =>
+                setImportSettings(prev => ({ ...prev, content: !prev.content }))
+              }
+            />
+
+            {/*
+              This div just prevents the adjacent sibling selector on the ToggleSwitch
+              from setting the margin-top on the second switch (ostensibly for vertical
+              placement).
+            */}
+            <div style={{ display: "none" }} />
+
+            <ToggleSwitch
+              label="Import Images"
+              checked={importSettings.images}
+              onChange={() =>
+                setImportSettings(prev => ({ ...prev, images: !prev.images }))
+              }
+            />
+          </div>
         </div>
       )}
     </form>
